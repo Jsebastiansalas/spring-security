@@ -27,8 +27,9 @@ Este proyecto parte de un modelo relacional de 52 tablas y lo reorganiza en **4 
 | **Patient & Stakeholders** | `com.demodd.*.patient` | Quién es quién: pacientes, contactos de apoyo, profesionales y sus credenciales. | `V2` |
 | **Clinical Care & EHR** | `com.demodd.*.clinical` | La atención clínica: historia, sesiones, notas SOAP, examen mental, riesgo suicida y planes de tratamiento. | `V3` |
 | **Chat & Artificial Intelligence** | `com.demodd.*.chat` | Conversación con el asistente IA, auditoría de inferencias, costes y escalamiento a un terapeuta humano. | `V4` |
+| **IAM & Security** | `com.demodd.*.iam` / `com.demodd.infrastructure.security` | Autenticación, usuarios, roles (Admin, Profesional, Paciente, User) y seguridad sin estado con Spring Security 6 y JWT. | `V5` |
 
-Entre los 4 contextos suman 52 entidades y 1.092 archivos Java.
+Entre los 5 contextos suman 53 entidades organizadas bajo arquitectura hexagonal.
 
 ### Cómo se relacionan
 
@@ -78,6 +79,15 @@ flowchart LR
 - **Escalamiento a humano:** ChatEscalation, ChatEscalationStatusHistory, ChatEscalationAssignment.
 - **Catálogos:** Priority, ConversationStatus, SenderType, MessageType, AiRunStatus, EscalationStatus.
 
+### 3.5 Identity & Access Management (IAM) & Security
+**Qué resuelve:** autenticación y control de acceso seguro y sin estado (*stateless*).
+**Qué hice:**
+- **Dominio IAM:** entidad `User`, Value Objects (`UserId`, `Username`, `UserEmail`, `PasswordHash`, `UserRole`, `UserStatus`), eventos y puertos de persistencia y codificación de contraseñas.
+- **Aplicación IAM:** casos de uso para registro, login y consulta de usuarios (`RegisterUserUseCase`, `LoginUseCase`, etc.).
+- **Infraestructura de Seguridad:** integración de **Spring Security 6** con filtro `JwtAuthenticationFilter`, `JwtService` (HMAC-SHA256 con JJWT 0.12.5), `BCryptPasswordEncoderAdapter`, `CustomUserDetailsService` y manejadores JSON para 401 y 403.
+- **Endpoints públicos:** `POST /api/v1/auth/register`, `POST /api/v1/auth/login`.
+- **Endpoints protegidos:** `GET /api/v1/auth/me` y todas las APIs de los demás contextos (`/api/v1/**`) requieren `Authorization: Bearer <token>`.
+
 ---
 
 ## 4. Estructura multimódulo (hexagonal)
@@ -121,4 +131,4 @@ Resultado verificado: `BUILD SUCCESS` en `demodd-parent`, `domain`, `application
    ```bash
    mvn spring-boot:run -pl demo
    ```
-   Flyway aplica las migraciones V1 a V4, una por Bounded Context, y crea las 52 tablas.
+   Flyway aplica las migraciones V1 a V5, creando las 53 tablas del sistema (incluyendo users).
